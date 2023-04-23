@@ -1,0 +1,25 @@
+﻿
+<YmMessageBox @ref="@_messageBox"/>
+
+<DxPopup @bind-Visible=@Visible
+         CloseOnOutsideClick="false"
+         CloseOnEscape="true"
+         Width="850px"
+         ShowFooter="true"
+         HeaderText="Введите строку подключения"
+         HeaderCssClass="font-weight-bold">
+    <BodyTemplate>
+        <div class="container">
+            <div class="row">
+                <DxTextBox @bind-Text="ConnectionString" ClearButtonDisplayMode="@DataEditorClearButtonDisplayMode.Auto"/>
+            </div>
+        </div>
+    </BodyTemplate>
+    <FooterContentTemplate>
+        <DxButton CssClass="popup-button" Click="OnOkClick" RenderStyle="ButtonRenderStyle.Primary" Text="ОК" />
+    </FooterContentTemplate>
+</DxPopup>
+
+@code {
+
+}

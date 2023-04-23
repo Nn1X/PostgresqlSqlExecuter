@@ -1,0 +1,180 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+@using pgAdminSosi.Components
+@using pgAdminSosi.Data;
+@using pgAdminSosi.Helpers.DataGridUtils.ColumnBuilder;
+@using pgAdminSosi.Helpers.DataGridUtils.ColumnBuilder.Strategies;
+@using pgAdminSosi.Reflection.Models;
+
+<YmMessageBox @ref="_messageBox"/>
+<EditConnectionForm @ref="_editor" ConnectionString="@_connectionString" ChangeConnectionAction="@(async x => await OnConnectionStringChanged(x))"/>
+
+@if(_tablesNames == null || _tablesNames.Count == 0)
+{
+    <LoadingSpinner/>
+}
+else
+{
+    <div class="content_wapper">
+        <div class="database_info_wrapper">
+            <div class="database_info_header">
+                <p class="database_info_header-database_name">@_dataBaseName</p>
+                <svg @onclick="@ChangeDataBaseAsync" style="margin: 6px; cursor: pointer;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle" viewBox="0 0 16 16">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"></path>
+                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"></path>
+                </svg>
+            </div>
+            <div class="database_info_field">
+                @foreach (var tableName in _tablesNames)
+                {
+                    <div class="database_info_field-table_name">
+                        @tableName
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="sql_editor_wrapper">
+            <div class="scripts_editor_wrapper">
+                <div class="scripts_editor_field">
+                    <div class="scripts_editor_field-menu">
+                        <svg @onclick="@ExecuteScriptAsync" xmlns="http://www.w3.org/2000/svg" style="margin: 6px; cursor: pointer;" width="16" height="16" fill="currentColor" class="bi bi-play-circle" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                            <path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z" />
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" style="margin: 6px; cursor: pointer;" width="16" height="16" fill="currentColor" class="bi bi-arrow-up-left-circle" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8zm15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-5.904 2.803a.5.5 0 1 0 .707-.707L6.707 6h2.768a.5.5 0 1 0 0-1H5.5a.5.5 0 0 0-.5.5v3.975a.5.5 0 0 0 1 0V6.707l4.096 4.096z" />
+                        </svg>
+                    </div>
+                    <DxMemo Text="@_script"
+                        TextChanged="@(async x => await OnScriptChangedAsync(x))"
+                        CssClass="scripts_editor_field-editor"
+                        Rows="15" />
+
+                </div>
+            </div>
+            <div class="data_wrapper">
+                <div class="data_field">
+                    <DxDataGrid Data="@_resultData"
+                            ShowFilterRow="true"
+                            ShowGroupPanel="true"
+                            PagerNavigationMode="PagerNavigationMode.InputBox">
+                        <Columns>
+                            @DataGridColumnBuilder.BuildColumns(
+                        _resultData.First(),
+                        new IGenetationStrategy[]{
+                        new DefaultComponentAttributesGenerationStrategy()});
+                        </Columns>
+                    </DxDataGrid>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+@code{
+    [Inject]
+    DataBaseService DataBaseService{ get; set; }
+    [Inject]
+    ProtectedLocalStorage ProtectedLocalStorage{ get; set; }
+
+    private string _connectionString = string.Empty;
+    private string _dataBaseName = string.Empty;
+    private string _script = string.Empty;
+    private List<string> _tablesNames = new List<string>();
+    private List<DynamicClass> _resultData = new List<DynamicClass>() { new DynamicClass(new List<Field>() { new("id", typeof(string), "0") }) };
+    private YmMessageBox _messageBox;
+    private EditConnectionForm _editor;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender)
+        {
+            await SetConnectionStringAsync();
+            await SetScriptAsync();
+
+            if (!string.IsNullOrWhiteSpace(_connectionString))
+            {
+                await SetDataBaseInfo();
+                StateHasChanged();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_connectionString))
+            {
+                _editor.Show();
+            }
+        }
+
+    }
+
+    private async Task ChangeDataBaseAsync()
+    {
+        _editor.Show();
+
+    }
+
+    private async Task OnConnectionStringChanged(string connectionString)
+    {
+        if (!string.IsNullOrWhiteSpace(connectionString))
+        {
+            _connectionString = connectionString;
+            await SetDataBaseInfo();
+            await ProtectedLocalStorage.SetAsync("connectionString", _connectionString);
+            StateHasChanged();
+            return;
+        }
+        _editor.Show();
+    }
+
+    private async Task SetDataBaseInfo()
+    {
+        try
+        {
+            _dataBaseName = await DataBaseService.GetDataBaseNameAsync(_connectionString);
+            _tablesNames = await DataBaseService.GetDataBaseTablesAsync(_connectionString);
+        }
+        catch(Exception ex)
+        {
+            await ProtectedLocalStorage.DeleteAsync("connectionString");
+            _messageBox.Show("Ошибка", ex.Message, YmMessageBoxIcon.Error, _editor.Show);
+        }
+
+    }
+
+    private async Task OnScriptChangedAsync(string script)
+    {
+        _script = script;
+        await ProtectedLocalStorage.SetAsync("script", _script);
+    }
+
+    private async Task SetScriptAsync()
+    {
+        var result = await ProtectedLocalStorage.GetAsync<string>("script");
+        _script = result.Success ? result.Value : string.Empty;
+    }
+
+    private async Task SetConnectionStringAsync()
+    {
+        var result = await ProtectedLocalStorage.GetAsync<string>("connectionString");
+        _connectionString = result.Success ? result.Value : string.Empty;
+    }
+
+    private async Task ExecuteScriptAsync()
+    {
+        try
+        {
+            _resultData = await DataBaseService.ExecuteScriptAsync(_connectionString, _script);
+        }
+        catch(Exception ex)
+        {
+            _messageBox.Show("Ошибка", ex.Message, YmMessageBoxIcon.Error);
+        }
+    }
+}
+

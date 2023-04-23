@@ -1,0 +1,26 @@
+﻿<DxPopup 
+    @bind-Visible=@Visible 
+    CloseOnOutsideClick="true"
+    CloseOnEscape="true"
+    ShowFooter="true" 
+    HeaderText=@Title
+    HeaderCssClass="font-weight-bold">
+        <BodyTemplate>
+            <div class="container">
+                <div class="row">
+                    @if(IconClass != null) {
+                        <div class="col-2 justify-content-center align-self-center">
+                            <i class="@IconClass" style="font-size: 36pt;"></i>
+                        </div>    
+                    }
+                    <div class="col-10 justify-content-center align-self-center @MessageCssClass" 
+                         style="font-size: 18px;">
+                        @Message
+                    </div>
+                </div>
+            </div>
+        </BodyTemplate>
+        <FooterContentTemplate>
+            <DxButton CssClass="popup-button" Click="OnOkClick" RenderStyle="ButtonRenderStyle.Primary" Text="ОК" />
+        </FooterContentTemplate>
+</DxPopup>
