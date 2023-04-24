@@ -128,6 +128,10 @@ else
         {
             await ExecuteScriptAsync();
         }
+        else
+        {
+            await OnScriptChangedAsync(_script);
+        }
     }
 
     private async Task<string> GetSelectedScriptAsync()
