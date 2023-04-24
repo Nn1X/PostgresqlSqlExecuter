@@ -45,7 +45,7 @@ else
                             <path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8zm15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-5.904 2.803a.5.5 0 1 0 .707-.707L6.707 6h2.768a.5.5 0 1 0 0-1H5.5a.5.5 0 0 0-.5.5v3.975a.5.5 0 0 0 1 0V6.707l4.096 4.096z" />
                         </svg>
                     </div>
-                    <DxMemo Text="@_script"
+                    <DxMemo Text="@_script" @onkeydown="F5"
                         TextChanged="@(async x => await OnScriptChangedAsync(x))"
                         CssClass="scripts_editor_field-editor"
                         Rows="15" />
@@ -69,6 +69,7 @@ else
             </div>
         </div>
     </div>
+
 }
 
 
@@ -77,6 +78,8 @@ else
     DataBaseService DataBaseService{ get; set; }
     [Inject]
     ProtectedLocalStorage ProtectedLocalStorage{ get; set; }
+    [Inject]
+    IJSRuntime JsRuntime{ get; set; }
 
     private string _connectionString = string.Empty;
     private string _dataBaseName = string.Empty;
@@ -117,6 +120,20 @@ else
     {
         _editor.Show();
 
+    }
+
+    public async Task F5(KeyboardEventArgs e)
+    {
+        if (e.Code == "F5")
+        {
+            await ExecuteScriptAsync();
+        }
+}
+
+    private async Task<string> GetSelectedScriptAsync()
+    {
+        var script = await JsRuntime.InvokeAsync<string>("get_selected_text");
+        return script;
     }
 
     private async Task OnConnectionStringChanged(string connectionString)
@@ -169,7 +186,11 @@ else
     {
         try
         {
-            _resultData = await DataBaseService.ExecuteScriptAsync(_connectionString, _script);
+            var selectedScript = await GetSelectedScriptAsync();
+            if(string.IsNullOrWhiteSpace(selectedScript))
+                _resultData = await DataBaseService.ExecuteScriptAsync(_connectionString, _script);
+            else
+                _resultData = await DataBaseService.ExecuteScriptAsync(_connectionString, selectedScript);
         }
         catch(Exception ex)
         {

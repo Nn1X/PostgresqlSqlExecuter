@@ -6,8 +6,17 @@
     <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="DevExpress.Blazor" Version="21.2.13" />
-    <PackageReference Include="DevExpress.Blazor.ru" Version="21.2.13" />
+    <None Remove="Pages\Index.razor.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Pages\Index.razor.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="wwwroot\js\getSelectedText.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="DevExpress.Blazor" Version="21.2.7" />
+    <PackageReference Include="DevExpress.Blazor.ru" Version="21.2.7" />
     <PackageReference Include="Npgsql" Version="7.0.2" />
   </ItemGroup>
 </Project>
