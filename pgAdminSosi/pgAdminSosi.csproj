@@ -6,12 +6,6 @@
     <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="Pages\Index.razor.js" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Pages\Index.razor.js" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="wwwroot\js\getSelectedText.js" />
   </ItemGroup>
   <ItemGroup>
