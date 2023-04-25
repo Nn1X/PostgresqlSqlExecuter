@@ -5,7 +5,8 @@
 @using pgAdminSosi.Helpers.DataGridUtils.ColumnBuilder;
 @using pgAdminSosi.Helpers.DataGridUtils.ColumnBuilder.Strategies;
 @using pgAdminSosi.Reflection.Models;
-
+@using BlazorMonaco.Editor
+@using BlazorMonaco
 <YmMessageBox @ref="_messageBox"/>
 <EditConnectionForm @ref="_editor" ConnectionString="@_connectionString" ChangeConnectionAction="@(async x => await OnConnectionStringChanged(x))"/>
 
@@ -45,11 +46,13 @@ else
                             <path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8zm15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-5.904 2.803a.5.5 0 1 0 .707-.707L6.707 6h2.768a.5.5 0 1 0 0-1H5.5a.5.5 0 0 0-.5.5v3.975a.5.5 0 0 0 1 0V6.707l4.096 4.096z" />
                         </svg>
                     </div>
-                    <DxMemo Text="@_script" @onkeydown="F5"
+                   @* <DxMemo Text="@_script" @onkeydown="F5"
                         TextChanged="@(async x => await OnScriptChangedAsync(x))"
                         CssClass="scripts_editor_field-editor"
-                        Rows="15" />
-
+                        Rows="15" />*@
+                   <StandaloneCodeEditor Id="my-editor-instance-id" ConstructionOptions="EditorConstructionOptions"
+                                         @ref="_standaloneCodeEditor" OnKeyDown="@(async x => await F5(x))" 
+                                         CssClass="script_editor" OnDidInit="(x => { SetThemeAsync(); })"/>
                 </div>
             </div>
             <div class="data_wrapper">
@@ -80,7 +83,8 @@ else
     ProtectedLocalStorage ProtectedLocalStorage{ get; set; }
     [Inject]
     IJSRuntime JsRuntime{ get; set; }
-
+    
+    private StandaloneCodeEditor _standaloneCodeEditor;
     private string _connectionString = string.Empty;
     private string _dataBaseName = string.Empty;
     private string _script = string.Empty;
@@ -89,10 +93,42 @@ else
     private YmMessageBox _messageBox;
     private EditConnectionForm _editor;
 
-    protected override async Task OnInitializedAsync()
+    private StandaloneEditorConstructionOptions EditorConstructionOptions(StandaloneCodeEditor editor)
     {
-
+        return new StandaloneEditorConstructionOptions
+        {
+            AutomaticLayout = true,
+            Language = "sql",
+            Value = _script
+        };
     }
+
+    private async Task SetThemeAsync()
+    {
+        
+        await Global.DefineTheme("my-custom-theme", new StandaloneThemeData
+        {
+            Inherit = true,
+            Rules = new List<TokenThemeRule>
+            {
+                new TokenThemeRule { Background = "363636", Foreground = "E0E0E0" },
+                new TokenThemeRule { Token = "keyword", Foreground = "59ADFF" },
+                new TokenThemeRule { Token = "operator.sql", Foreground = "59ADFF" },
+                new TokenThemeRule { Token = "number", Foreground = "66CC66" },
+                new TokenThemeRule { Token = "string.sql", Foreground = "E65C5C" },
+                new TokenThemeRule { Token = "comment", Foreground = "7A7A7A" },
+            },
+            Colors = new Dictionary<string, string>
+            {
+                ["editor.background"] = "#363636",
+                ["editorCursor.foreground"] = "#E0E0E0",
+                ["editorLineNumber.foreground"] = "#7A7A7A"
+            },
+        });
+        
+        await Global.SetTheme("my-custom-theme");
+    }
+    
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -113,7 +149,7 @@ else
                 _editor.Show();
             }
         }
-
+        
     }
 
     private async Task ChangeDataBaseAsync()
@@ -122,8 +158,9 @@ else
 
     }
 
-    public async Task F5(KeyboardEventArgs e)
+    public async Task F5(KeyboardEvent e)
     {
+        _script = await _standaloneCodeEditor.GetValue();
         if (e.Code == "F5")
         {
             await ExecuteScriptAsync();

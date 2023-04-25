@@ -148,3 +148,7 @@ html, body {
     border: 1px solid #000000;
     overflow: auto;
 }
+
+.script_editor{
+    height: 305px;
+}
